@@ -31,7 +31,9 @@ import (
 func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 
 	key := client.ObjectKeyFromObject(obj)
+	// 缓存查对象，出错
 	if err := c.Get(ctx, key, obj); err != nil {
+		// 如果不是 找不到对象的错
 		if !errors.IsNotFound(err) {
 			return controllerutil.OperationResultNone, err
 		}
@@ -44,6 +46,7 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f c
 		return controllerutil.OperationResultCreated, nil
 	}
 
+	// 找到了对象，并且未出错，这时需要更新对象
 	existing := obj.DeepCopyObject()
 	if err := mutate(f, key, obj); err != nil {
 		return controllerutil.OperationResultNone, err

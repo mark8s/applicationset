@@ -78,7 +78,9 @@ func (r *ApplicationSetReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	var applicationSetInfo argoprojiov1alpha1.ApplicationSet
 	parametersGenerated := false
 
+	// r.Get 从缓存中读取
 	if err := r.Get(ctx, req.NamespacedName, &applicationSetInfo); err != nil {
+		// 如果NotFound，返回一个错误给调用方让其重新入队
 		if client.IgnoreNotFound(err) != nil {
 			log.WithError(err).Infof("unable to get ApplicationSet: '%v' ", err)
 		}
@@ -86,6 +88,7 @@ func (r *ApplicationSetReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	// Do not attempt to further reconcile the ApplicationSet if it is being deleted.
+	// 已经被删除的资源，直接出队，不做处理
 	if applicationSetInfo.ObjectMeta.DeletionTimestamp != nil {
 		return ctrl.Result{}, nil
 	}
@@ -522,6 +525,7 @@ func (r *ApplicationSetReconciler) createOrUpdateInCluster(ctx context.Context, 
 			},
 		}
 
+		// 创建或者更新
 		action, err := utils.CreateOrUpdate(ctx, r.Client, found, func() error {
 			// Copy only the Application/ObjectMeta fields that are significant, from the generatedApp
 			found.Spec = generatedApp.Spec
